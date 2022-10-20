@@ -1,23 +1,32 @@
-"""Naval Fate.
+"""squirrel.
 
 Usage:
-  naval_fate.py ship new <name>...
-  naval_fate.py ship <name> move <x> <y> [--speed=<kn>]
-  naval_fate.py ship shoot <x> <y>
-  naval_fate.py mine (set|remove) <x> <y> [--moored | --drifting]
-  naval_fate.py (-h | --help)
-  naval_fate.py --version
+  squirrel get (<package>)...
+  squirrel remove <package>
+  squirrel info <package>
+  squirrel update <package>
+  squirrel upgrade
+  squirrel (-h | --help)
+  squirrel (-v | --version)
 
 Options:
   -h --help     Show this screen.
-  --version     Show version.
-  --speed=<kn>  Speed in knots [default: 10].
-  --moored      Moored (anchored) mine.
-  --drifting    Drifting mine.
-
+  -v --version     Show version.
 """
 
 from docopt import docopt
+import operations
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__, version="squirrel 1.0.0-dev")
+    args = docopt(__doc__, version="squirrel 1.0.0-dev")
+    
+    if args.get('get'):
+        operations.get(args.get('<package>'))
+    elif args.get('info'):
+        operations.info(args.get('<package>'))
+    elif args.get('remove'):
+        operations.remove(args.get('<package>'))
+    elif args.get('update'):
+        operations.update(args.get('<package>'))
+    elif args.get('upgrade'):
+        operations.update()
