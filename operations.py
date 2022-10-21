@@ -1,10 +1,12 @@
 import os
-from utils.db import checkPkgExists, checkPkgInstalled, getPkgFile, getPkgInfo
+from utils.db import checkPkgExists, checkPkgInstalled, getPkgBranch, getPkgFile, getPkgInfo, registerPkg, unregisterPkg
 from utils.logger import *
 
 import requests
 import sys
 import tempfile
+import utils.archive as archive
+import utils.config as config
 
 def downloadPkg(url, packageName):
     file_name = url.split('/')[-1]
@@ -24,6 +26,7 @@ def downloadPkg(url, packageName):
                 done = int(100 * dl / total_length)
                 sys.stdout.write("\rDownloading package '" + packageName + "' " + str(done) + "%")    
                 sys.stdout.flush()
+    print()
 
 def get(packages):
     for package in packages:
@@ -32,17 +35,9 @@ def get(packages):
             logError("package '" + package + "' does not exist in repos !")
             return 1
 
-        packageInstalled = checkPkgInstalled(package)
-        if packageInstalled:
-            logInfo("package '" + package +"' is already installed.")
-            needInstall = input("Do you want to reinstall the package ? (Y/N) ")
-            needInstall = needInstall.lower()
-
-            if needInstall != 'y':
-                return 1
-
     for package in packages:
         print('[+] ' + package)
+
     print()
     permission = input('Do you really want to install these packages ? (Y/N) ')
     permission = permission.lower()
@@ -59,23 +54,39 @@ def get(packages):
 
         pkgInfo = getPkgInfo(package)
 
+        if len(pkgInfo['rundeps']) > 0:
+            logInfo('Getting package dependencies...')
+
+        for d in pkgInfo['rundeps']:
+            installPkg(d, getPkgInfo(d))
+        
         if len(packages) == 1:
             print('---------------')
             print("Package '" + pkgInfo['name'] + "':")
             print("===> Version: " + pkgInfo['version'])
             print("===> Author: " + pkgInfo['author'])
             print("===> Maintainer: " + pkgInfo['maintainer'])
+            print("===> Source: " + pkgInfo['source'])
             if 'url' in pkgInfo:
                 print("===> Homepage: " + pkgInfo['url'])
             print('---------------')
-
-        tempDir = tempfile.TemporaryDirectory('squirrel-' + package)
-        os.chdir(tempDir.name)
-        downloadPkg(pkgInfo['source'], package)
-        print()
-        print(os.listdir())
-
+            
+        installPkg(package, pkgInfo)
     pass
+
+def installPkg(package, pkgInfo):
+    print()
+    tempDir = tempfile.TemporaryDirectory('squirrel-' + package)
+    os.chdir(tempDir.name)
+    downloadPkg(getPkgBranch(package)[list(getPkgBranch(package).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz', package)
+    if 'ROOT' not in os.environ:
+        os.environ['ROOT'] = '/'
+    os.chdir(os.environ['ROOT'])
+    archive.extractPkgArchive(tempDir.name + '/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz')
+    if checkPkgInstalled(package):
+        unregisterPkg(package)
+    registerPkg(package, pkgInfo['version'])
+    os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree')
 
 def update(package):
     pass

@@ -19,7 +19,6 @@ import operations
 
 if __name__ == '__main__':
     args = docopt(__doc__, version="squirrel 1.0.0-dev")
-    
     if args.get('get'):
         operations.get(args.get('<package>'))
     elif args.get('info'):

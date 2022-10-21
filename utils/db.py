@@ -1,3 +1,4 @@
+from datetime import date
 import os, requests, yaml
 import utils.config as config
 
@@ -85,3 +86,20 @@ def readDB(path):
         packages[packageName] = packageVersion
 
     return packages
+
+def registerPkg(package, version):
+    branchName = list(getPkgBranch(package).keys())[0]
+    localDB = open(config.localPath + '/' + branchName + '/INDEX', 'a')
+    localDB.write(package + " " + version + " " + date.today().strftime("%Y-%m-%d") + '\n')
+    localDB.close()
+
+def unregisterPkg(package):
+    branchName = list(getPkgBranch(package).keys())[0]
+    reader = open(config.localPath + '/' + branchName + '/INDEX', 'r')
+    writer = open(config.localPath + '/' + branchName + '/INDEX', 'w')
+    for line in reader.readlines():
+        if not line.startswith(package):
+            writer.write(line)
+
+    reader.close()
+    writer.close()
