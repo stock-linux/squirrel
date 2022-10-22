@@ -3,7 +3,7 @@ import os, requests, yaml
 import utils.config as config
 
 def checkPkgExists(package):
-    branches = getBranches(config.configPath + 'branches')
+    branches = getBranches()
     
     for branch in branches:
         branchPath = config.distPath + branch + '/'
@@ -16,7 +16,7 @@ def checkPkgExists(package):
     return False
 
 def checkPkgInstalled(package):
-    branches = getBranches(config.configPath + 'branches')
+    branches = getBranches()
 
     for branch in branches:
         branchLocalPath = config.localPath + branch + '/'
@@ -29,10 +29,10 @@ def checkPkgInstalled(package):
 
     return False
 
-def getBranches(configFilePath):
+def getBranches():
     branches = {}
 
-    configFile = open(configFilePath, 'r')
+    configFile = open(config.configPath + 'branches', 'r')
     for line in configFile.readlines():
         branchName = line.split()[0].strip()
         branchURL = line.split()[1].strip()
@@ -41,8 +41,20 @@ def getBranches(configFilePath):
 
     return branches
 
+def getBranchPkgs(branch):
+    packages = {}
+    indexPath = getBranchIndex(branch)
+    indexFile = open(indexPath, 'r')
+    for line in indexFile:
+        packages[line.split()[0].strip()] = line.split()[1].strip()
+
+    return packages
+
+def getBranchIndex(branch):
+    return config.distPath + branch + '/INDEX'
+
 def getPkgBranch(package):
-    branches = getBranches(config.configPath + 'branches')
+    branches = getBranches()
 
     for branch in branches:
         branchDistPath = config.distPath + branch + '/'
@@ -94,12 +106,11 @@ def registerPkg(package, version):
     localDB.close()
 
 def unregisterPkg(package):
+    print('Unregistering package ' + package)
     branchName = list(getPkgBranch(package).keys())[0]
-    reader = open(config.localPath + '/' + branchName + '/INDEX', 'r')
-    writer = open(config.localPath + '/' + branchName + '/INDEX', 'w')
-    for line in reader.readlines():
-        if not line.startswith(package):
-            writer.write(line)
-
-    reader.close()
-    writer.close()
+    with open(config.localPath + '/' + branchName + '/INDEX', "r") as f:
+        lines = f.readlines()
+    with open(config.localPath + '/' + branchName + '/INDEX', "w") as f:
+        for line in lines:
+            if not line.startswith(package):
+                f.write(line)

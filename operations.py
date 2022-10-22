@@ -1,5 +1,5 @@
 import os
-from utils.db import checkPkgExists, checkPkgInstalled, getPkgBranch, getPkgFile, getPkgInfo, registerPkg, unregisterPkg
+from utils.db import checkPkgExists, checkPkgInstalled, getBranchPkgs, getBranches, getPkgBranch, getPkgFile, getPkgInfo, registerPkg, unregisterPkg
 from utils.logger import *
 
 import requests
@@ -29,14 +29,28 @@ def downloadPkg(url, packageName):
     print()
 
 def get(packages):
-    for package in packages:
+    # Check if packages names correspond to any branch name
+    branchesToGet = []
+    packagesToGet = []
+    branches = getBranches()
+    for branch in branches:
+        for package in packages:
+            if package == branch:
+                branchesToGet.append(branch)
+            else:
+                packagesToGet.append(package)
+
+    for package in packagesToGet:
         packageExists = checkPkgExists(package)
         if not packageExists:
             logError("package '" + package + "' does not exist in repos !")
             return 1
 
-    for package in packages:
+    for package in packagesToGet:
         print('[+] ' + package)
+
+    for branch in branchesToGet:
+        print('[+branch] ' + branch)
 
     print()
     permission = input('Do you really want to install these packages ? (Y/N) ')
@@ -46,33 +60,45 @@ def get(packages):
         return 1
     
     logInfo("Getting packages infos...")
-    for package in packages:
-        packageInfoPath = getPkgFile(package)
+    for package in packagesToGet:
+        getPkg(package, len(packages))
+    for branch in branchesToGet:
+        branchPkgs = getBranchPkgs(branch)
+        for package in branchPkgs:
+            if not checkPkgInstalled(package):
+                getPkg(package, len(branchPkgs))
+            else:
+                logInfo("package '" + package + "' is already installed.")
 
-        if packageInfoPath == None:
-            logError("There are some errors in repos for the package '" + package + "' ! Call an admin.")
+def getPkg(package, pkgCount):
+    packageInfoPath = getPkgFile(package)
 
-        pkgInfo = getPkgInfo(package)
+    if packageInfoPath == None:
+        logError("There are some errors in repos for the package '" + package + "' ! Call an admin.")
 
-        if len(pkgInfo['rundeps']) > 0:
-            logInfo('Getting package dependencies...')
+    pkgInfo = getPkgInfo(package)
+
+    if 'rundeps' in pkgInfo and len(pkgInfo['rundeps']) > 0:
+        logInfo('Getting package dependencies...')
 
         for d in pkgInfo['rundeps']:
-            installPkg(d, getPkgInfo(d))
+            if not checkPkgInstalled(d):
+                installPkg(d, getPkgInfo(d))
+            else:
+                logInfo("dependency '" + d + "' is already installed.")
+    
+    if pkgCount == 1:
+        print('---------------')
+        print("Package '" + pkgInfo['name'] + "':")
+        print("===> Version: " + pkgInfo['version'])
+        print("===> Author: " + pkgInfo['author'])
+        print("===> Maintainer: " + pkgInfo['maintainer'])
+        print("===> Source: " + pkgInfo['source'])
+        if 'url' in pkgInfo:
+            print("===> Homepage: " + pkgInfo['url'])
+        print('---------------')
         
-        if len(packages) == 1:
-            print('---------------')
-            print("Package '" + pkgInfo['name'] + "':")
-            print("===> Version: " + pkgInfo['version'])
-            print("===> Author: " + pkgInfo['author'])
-            print("===> Maintainer: " + pkgInfo['maintainer'])
-            print("===> Source: " + pkgInfo['source'])
-            if 'url' in pkgInfo:
-                print("===> Homepage: " + pkgInfo['url'])
-            print('---------------')
-            
-        installPkg(package, pkgInfo)
-    pass
+    installPkg(package, pkgInfo)
 
 def installPkg(package, pkgInfo):
     print()
