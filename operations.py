@@ -169,15 +169,33 @@ def remove(packages):
 
         unregisterPkg(package)
         os.remove(config.localPath + list(packageBranch.keys())[0] + '/' + package + '.tree')
+        os.remove(config.localPath + list(packageBranch.keys())[0] + '/' + package)
         logInfo("package '" + package + "' has been successfully removed.")
         if fileNotFoundCount > 0:
             print('Files not found during deletion: ' + str(fileNotFoundCount))
 
-def update(package):
-    pass
+def info(packages):
+    for package in packages:
+        download = True
+        if checkPkgInstalled(package):
+            download = False
+        
+        packageInfoPath = getPkgFile(package, download)
+        pkgInfo = getPkgInfo(package)
 
-def info(package):
-    pass
+        print('-----PACKAGE ' + package + '-----')
+        print("===> Name: " + pkgInfo['name'])
+        print("===> Version: " + pkgInfo['version'])
+        print("===> Author: " + pkgInfo['author'])
+        print("===> Maintainer: " + pkgInfo['maintainer'])
+        if 'url' in pkgInfo:
+            print("===> Homepage: " + pkgInfo['url'])
+        print("===> Installed: " + str(checkPkgInstalled(package)))
+        
+        if download:
+            os.remove(packageInfoPath)
+
+        print()
 
 def upgrade():
     pass
