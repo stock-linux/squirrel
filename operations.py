@@ -1,5 +1,5 @@
 import os
-from utils.db import checkPkgExists, checkPkgInstalled, getBranchPkgs, getBranches, getPkgBranch, getPkgFile, getPkgInfo, registerPkg, unregisterPkg
+from utils.db import checkPkgExists, checkPkgInstalled, checkVersionUpdate, getBranchPkgs, getBranches, getPkgBranch, getPkgFile, getPkgInfo, readDB, registerPkg, unregisterPkg
 from utils.logger import *
 
 import requests
@@ -29,6 +29,7 @@ def downloadPkg(url, packageName):
     print()
 
 def get(packages):
+    sync()
     # Check if packages names correspond to any branch name
     branchesToGet = []
     packagesToGet = []
@@ -68,8 +69,9 @@ def get(packages):
     for package in packagesToGet:
         getPkg(package, len(packagesToGet))
 
-def getPkg(package, pkgCount):
-    if checkPkgInstalled(package):
+def getPkg(package, pkgCount, update=False):
+    sync()
+    if checkPkgInstalled(package) and not update:
         logInfo("package '" + package + "' is already installed.")
         return
     packageInfoPath = getPkgFile(package)
@@ -103,6 +105,7 @@ def getPkg(package, pkgCount):
     print()
 
 def installPkg(package, pkgInfo):
+    sync()
     print()
     tempDir = tempfile.TemporaryDirectory('squirrel-' + package)
     os.chdir(tempDir.name)
@@ -118,6 +121,7 @@ def installPkg(package, pkgInfo):
     logInfo("package '" + package + "' has been successfully installed.")
 
 def remove(packages):
+    sync()
     branchesToRemove = []
     packagesToRemove = []
     branches = getBranches()
@@ -175,6 +179,7 @@ def remove(packages):
             print('Files not found during deletion: ' + str(fileNotFoundCount))
 
 def info(packages):
+    sync()
     for package in packages:
         download = True
         if checkPkgInstalled(package):
@@ -198,4 +203,42 @@ def info(packages):
         print()
 
 def upgrade():
-    pass
+    sync()
+    installedPackages = []
+    for branch in getBranches():
+        branchInstalledPackages = readDB(config.localPath + branch + '/INDEX')
+        installedPackages.extend(branchInstalledPackages)
+
+    toUpdatePackages = []
+    for package in installedPackages:
+        if checkVersionUpdate(package):
+            toUpdatePackages.append(package)
+
+    if len(toUpdatePackages) <= 0:
+        logInfo("system is up to date.")
+        return
+
+    print("-----SYSTEM UPGRADE-----")
+    for package in toUpdatePackages:
+        print("[U] " + package)
+
+    print()
+
+    permission = input('Do you really want to upgrade the system ? (Y/N) ')
+    permission = permission.lower()
+    print()
+
+    if permission != 'y':
+        return 1
+
+    for package in toUpdatePackages:
+        getPkg(package, len(toUpdatePackages), True)
+
+def sync():
+    for branch in getBranches():
+        os.makedirs(config.distPath + branch, exist_ok=True)
+        os.chdir(config.distPath + branch)
+        request = requests.get(getBranches()[branch] + '/INDEX')
+        writer = open('INDEX', 'wb')
+        writer.write(request.content)
+        writer.close()

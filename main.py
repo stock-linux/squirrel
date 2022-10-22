@@ -4,7 +4,6 @@ Usage:
   squirrel get (<package>)...
   squirrel remove (<package>)...
   squirrel info (<package>)...
-  squirrel update <package>
   squirrel upgrade
   squirrel (-h | --help)
   squirrel (-v | --version)
@@ -25,7 +24,5 @@ if __name__ == '__main__':
         operations.info(args.get('<package>'))
     elif args.get('remove'):
         operations.remove(args.get('<package>'))
-    elif args.get('update'):
-        operations.update(args.get('<package>'))
     elif args.get('upgrade'):
-        operations.update()
+        operations.upgrade()

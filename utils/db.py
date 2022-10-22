@@ -1,4 +1,5 @@
 from datetime import date
+from packaging.version import Version, LegacyVersion
 import os, requests, yaml
 import utils.config as config
 
@@ -28,6 +29,13 @@ def checkPkgInstalled(package):
             return True
 
     return False
+
+def checkVersionUpdate(package):
+    pkgBranch = getPkgBranch(package)
+    pkgInfo = getPkgInfo(package)
+    distPackages = readDB(config.distPath + list(pkgBranch.keys())[0] + '/INDEX')
+    if Version(distPackages[package]) > Version(pkgInfo['version']):
+        return True
 
 def getBranches():
     branches = {}
