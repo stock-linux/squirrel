@@ -106,7 +106,6 @@ def registerPkg(package, version):
     localDB.close()
 
 def unregisterPkg(package):
-    print('Unregistering package ' + package)
     branchName = list(getPkgBranch(package).keys())[0]
     with open(config.localPath + '/' + branchName + '/INDEX', "r") as f:
         lines = f.readlines()

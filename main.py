@@ -2,7 +2,7 @@
 
 Usage:
   squirrel get (<package>)...
-  squirrel remove <package>
+  squirrel remove (<package>)...
   squirrel info <package>
   squirrel update <package>
   squirrel upgrade

@@ -37,6 +37,9 @@ def get(packages):
         for package in packages:
             if package == branch:
                 branchesToGet.append(branch)
+                branchPkgs = getBranchPkgs(branch)
+                for branchPkg in branchPkgs:
+                    packagesToGet.append(branchPkg)
             else:
                 packagesToGet.append(package)
 
@@ -46,6 +49,7 @@ def get(packages):
             logError("package '" + package + "' does not exist in repos !")
             return 1
 
+    print('-----PACKAGE INSTALLATION-----')
     for package in packagesToGet:
         print('[+] ' + package)
 
@@ -54,6 +58,7 @@ def get(packages):
 
     print()
     permission = input('Do you really want to install these packages ? (Y/N) ')
+    print()
     permission = permission.lower()
 
     if permission != 'y':
@@ -61,16 +66,12 @@ def get(packages):
     
     logInfo("Getting packages infos...")
     for package in packagesToGet:
-        getPkg(package, len(packages))
-    for branch in branchesToGet:
-        branchPkgs = getBranchPkgs(branch)
-        for package in branchPkgs:
-            if not checkPkgInstalled(package):
-                getPkg(package, len(branchPkgs))
-            else:
-                logInfo("package '" + package + "' is already installed.")
+        getPkg(package, len(packagesToGet))
 
 def getPkg(package, pkgCount):
+    if checkPkgInstalled(package):
+        logInfo("package '" + package + "' is already installed.")
+        return
     packageInfoPath = getPkgFile(package)
 
     if packageInfoPath == None:
@@ -99,6 +100,7 @@ def getPkg(package, pkgCount):
         print('---------------')
         
     installPkg(package, pkgInfo)
+    print()
 
 def installPkg(package, pkgInfo):
     print()
@@ -113,6 +115,63 @@ def installPkg(package, pkgInfo):
         unregisterPkg(package)
     registerPkg(package, pkgInfo['version'])
     os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree')
+    logInfo("package '" + package + "' has been successfully installed.")
+
+def remove(packages):
+    branchesToRemove = []
+    packagesToRemove = []
+    branches = getBranches()
+    for branch in branches:
+        for package in packages:
+            if package == branch:
+                branchesToRemove.append(branch)
+                for package in getBranchPkgs(branch):
+                    packagesToRemove.append(package)
+            else:
+                packagesToRemove.append(package)
+
+    print('-----PACKAGE DELETION-----')
+    for package in packagesToRemove:
+        print('[-] ' + package)
+    for branch in branchesToRemove:
+        print('[-branch] ' + branch)
+
+    print()
+    permission = input('Do you really want to remove these packages ? (Y/N) ')
+    permission = permission.lower()
+    print()
+
+    if permission != 'y':
+        return 1
+    for package in packagesToRemove:
+        fileNotFoundCount = 0
+        packageBranch = getPkgBranch(package)
+        if 'ROOT' not in os.environ:
+            os.environ['ROOT'] = '/'
+        os.chdir(os.environ['ROOT'])
+        treeFile = open(config.localPath + list(packageBranch.keys())[0] + '/' + package + '.tree', 'r')
+        dirsToCheck = []
+        for line in treeFile.readlines():
+            if line.strip() == '.' or line.strip() == './.TREE':
+                continue
+            if os.path.isdir(line.strip()):
+                dirsToCheck.append(line.strip())
+            else:
+                try:
+                    os.remove(line.strip())
+                except FileNotFoundError:
+                    logError("file '" + line.strip().replace('./', os.environ['ROOT']) + "' not found ! Anyway, continue.")
+                    fileNotFoundCount+=1
+
+        for dir in dirsToCheck:
+            if len(os.listdir(dir)) == 0:
+                os.removedirs(dir)
+
+        unregisterPkg(package)
+        os.remove(config.localPath + list(packageBranch.keys())[0] + '/' + package + '.tree')
+        logInfo("package '" + package + "' has been successfully removed.")
+        if fileNotFoundCount > 0:
+            print('Files not found during deletion: ' + str(fileNotFoundCount))
 
 def update(package):
     pass
