@@ -92,8 +92,34 @@ def getPkgInfo(package):
     packageBranch = getPkgBranch(package)
     packageInfoPath = getPkgFile(package, False)
 
-    stream = open(packageInfoPath, 'r')
-    return yaml.load(stream, Loader=yaml.Loader)
+    pkg_file = open(packageInfoPath, 'r')
+
+    record_build = False
+    opened_brackets = 0
+    info = {}
+    bracket_name = ""
+    for line in pkg_file.readlines():
+        if line.startswith("#") or line == "" or line == "\n":
+            continue
+        if "(" not in line or line.split(': ')[0] == "description":
+            if not record_build:
+                info[line.split(": ")[0].strip()] = line.split(": ")[1].strip()
+            else:
+                if line.replace('\n','').strip() != ")" or (")" in line and opened_brackets > 1):
+                    info[bracket_name] += line
+        else:
+            record_build = True
+            opened_brackets += 1
+            if opened_brackets > 1:
+                info[bracket_name] += line
+            else:
+                bracket_name = line.split("(")[0].strip()
+            if not bracket_name in info:
+                info[bracket_name] = ""  
+
+        if ")" in line:
+            opened_brackets -= 1
+    return info
 
 def readDB(path):
     packages = {}

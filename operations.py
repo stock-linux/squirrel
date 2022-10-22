@@ -130,7 +130,8 @@ def remove(packages):
             if package == branch:
                 branchesToRemove.append(branch)
                 for package in getBranchPkgs(branch):
-                    packagesToRemove.append(package)
+                    if checkPkgInstalled(package):
+                        packagesToRemove.append(package)
             else:
                 packagesToRemove.append(package)
 
@@ -190,9 +191,16 @@ def info(packages):
 
         print('-----PACKAGE ' + package + '-----')
         print("===> Name: " + pkgInfo['name'])
-        print("===> Version: " + pkgInfo['version'])
-        print("===> Author: " + pkgInfo['author'])
-        print("===> Maintainer: " + pkgInfo['maintainer'])
+        if not checkPkgInstalled(package):
+            print("===> Version: " + pkgInfo['version'])
+        else:
+            print("===> Version: [installed: " + readDB(config.localPath + list(getPkgBranch(package).keys())[0] + '/INDEX')[package] + "][distant: " + pkgInfo['version'] + "]")
+        if 'description' in pkgInfo:
+            print("===> Description: " + pkgInfo['description'])
+        if 'author' in pkgInfo:
+            print("===> Author: " + pkgInfo['author'])
+        if 'maintainer' in pkgInfo:
+            print("===> Maintainer: " + pkgInfo['maintainer'])
         if 'url' in pkgInfo:
             print("===> Homepage: " + pkgInfo['url'])
         print("===> Installed: " + str(checkPkgInstalled(package)))
