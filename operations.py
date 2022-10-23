@@ -80,13 +80,13 @@ def getPkg(package, pkgCount, noIndex, update=False):
         logError("There are some errors in repos for the package '" + package + "' ! Call an admin.")
 
     pkgInfo = getPkgInfo(package)
-
+    justInstalledPkgs = []
     if 'rundeps' in pkgInfo and len(pkgInfo['rundeps']) > 0:
         logInfo('Getting package dependencies...')
-
         for d in pkgInfo['rundeps'].split():
-            if not checkPkgInstalled(d):
+            if not checkPkgInstalled(d) and not d in justInstalledPkgs:
                 getPkg(d, getPkgInfo(d), noIndex)
+                justInstalledPkgs.append(d)
             else:
                 logInfo("dependency '" + d + "' is already installed.")
     
