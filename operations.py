@@ -86,7 +86,7 @@ def getPkg(package, pkgCount, noIndex, update=False):
 
         for d in pkgInfo['rundeps'].split():
             if not checkPkgInstalled(d):
-                installPkg(d, getPkgInfo(d), noIndex)
+                getPkg(d, getPkgInfo(d), noIndex)
             else:
                 logInfo("dependency '" + d + "' is already installed.")
     
@@ -94,8 +94,10 @@ def getPkg(package, pkgCount, noIndex, update=False):
         print('---------------')
         print("Package '" + pkgInfo['name'] + "':")
         print("===> Version: " + pkgInfo['version'])
-        print("===> Author: " + pkgInfo['author'])
-        print("===> Maintainer: " + pkgInfo['maintainer'])
+        if 'author' in pkgInfo:
+            print("===> Author: " + pkgInfo['author'])
+        if 'maintainer' in pkgInfo:
+            print("===> Maintainer: " + pkgInfo['maintainer'])
         print("===> Source: " + pkgInfo['source'])
         if 'url' in pkgInfo:
             print("===> Homepage: " + pkgInfo['url'])
