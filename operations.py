@@ -28,7 +28,7 @@ def downloadPkg(url, packageName):
                 sys.stdout.flush()
     print()
 
-def get(packages):
+def get(packages, noIndex):
     sync()
     # Check if packages names correspond to any branch name
     branchesToGet = []
@@ -67,9 +67,9 @@ def get(packages):
     
     logInfo("Getting packages infos...")
     for package in packagesToGet:
-        getPkg(package, len(packagesToGet))
+        getPkg(package, len(packagesToGet), noIndex)
 
-def getPkg(package, pkgCount, update=False):
+def getPkg(package, pkgCount, noIndex, update=False):
     sync()
     if checkPkgInstalled(package) and not update:
         logInfo("package '" + package + "' is already installed.")
@@ -101,10 +101,10 @@ def getPkg(package, pkgCount, update=False):
             print("===> Homepage: " + pkgInfo['url'])
         print('---------------')
         
-    installPkg(package, pkgInfo)
+    installPkg(package, pkgInfo, noIndex)
     print()
 
-def installPkg(package, pkgInfo):
+def installPkg(package, pkgInfo, noIndex):
     sync()
     print()
     tempDir = tempfile.TemporaryDirectory('squirrel-' + package)
@@ -114,14 +114,14 @@ def installPkg(package, pkgInfo):
         os.environ['ROOT'] = '/'
     os.chdir(os.environ['ROOT'])
     archive.extractPkgArchive(tempDir.name + '/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz')
-    if checkPkgInstalled(package):
+    if checkPkgInstalled(package) and not noIndex:
         unregisterPkg(package)
-    registerPkg(package, pkgInfo['version'])
+    if not noIndex:
+        registerPkg(package, pkgInfo['version'])
     os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree')
     logInfo("package '" + package + "' has been successfully installed.")
 
-def remove(packages):
-    sync()
+def remove(packages, noIndex):
     branchesToRemove = []
     packagesToRemove = []
     branches = getBranches()
@@ -133,8 +133,12 @@ def remove(packages):
                     if checkPkgInstalled(package):
                         packagesToRemove.append(package)
             else:
+                if not noIndex and not checkPkgInstalled(package):
+                    print("error: package '" + package + "' is not installed.")
+                    exit(1)
                 packagesToRemove.append(package)
 
+    
     print('-----PACKAGE DELETION-----')
     for package in packagesToRemove:
         print('[-] ' + package)
@@ -159,20 +163,21 @@ def remove(packages):
         for line in treeFile.readlines():
             if line.strip() == '.' or line.strip() == './.TREE':
                 continue
-            if os.path.isdir(line.strip()):
+            if os.path.isdir(line.strip()) and not os.path.islink(line.strip()):
                 dirsToCheck.append(line.strip())
             else:
                 try:
                     os.remove(line.strip())
                 except FileNotFoundError:
-                    logError("file '" + line.strip().replace('./', os.environ['ROOT']) + "' not found ! Anyway, continue.")
+                    logError("file '" + line.strip().replace('./', os.environ['ROOT'] + '/') + "' not found ! Anyway, continue.")
                     fileNotFoundCount+=1
 
         for dir in dirsToCheck:
             if len(os.listdir(dir)) == 0:
                 os.removedirs(dir)
 
-        unregisterPkg(package)
+        if not noIndex:
+            unregisterPkg(package)
         os.remove(config.localPath + list(packageBranch.keys())[0] + '/' + package + '.tree')
         os.remove(config.localPath + list(packageBranch.keys())[0] + '/' + package)
         logInfo("package '" + package + "' has been successfully removed.")
@@ -240,7 +245,7 @@ def upgrade():
         return 1
 
     for package in toUpdatePackages:
-        getPkg(package, len(toUpdatePackages), True)
+        getPkg(package, len(toUpdatePackages), False, True)
 
 def sync():
     for branch in getBranches():
