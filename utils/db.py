@@ -90,7 +90,7 @@ def getPkgFile(package, download=True):
 
 def getPkgInfo(package):
     packageBranch = getPkgBranch(package)
-    packageInfoPath = getPkgFile(package, False)
+    packageInfoPath = getPkgFile(package)
 
     pkg_file = open(packageInfoPath, 'r')
 

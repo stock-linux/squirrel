@@ -84,9 +84,9 @@ def getPkg(package, pkgCount, noIndex, update=False):
     if 'rundeps' in pkgInfo and len(pkgInfo['rundeps']) > 0:
         logInfo('Getting package dependencies...')
 
-        for d in pkgInfo['rundeps']:
+        for d in pkgInfo['rundeps'].split():
             if not checkPkgInstalled(d):
-                installPkg(d, getPkgInfo(d))
+                installPkg(d, getPkgInfo(d), noIndex)
             else:
                 logInfo("dependency '" + d + "' is already installed.")
     
