@@ -16,7 +16,14 @@ def checkPkgExists(package):
 
     return False
 
-def checkPkgInstalled(package):
+def checkPkgInstalled(package, chroot):
+    if chroot != None:
+        index = readDB(chroot + '/INDEX')
+        if package in index:
+            return True
+        
+        return False
+
     branches = getBranches()
 
     for branch in branches:
@@ -32,7 +39,7 @@ def checkPkgInstalled(package):
 
 def checkVersionUpdate(package):
     pkgBranch = getPkgBranch(package)
-    pkgInfo = getPkgInfo(package)
+    pkgInfo = getPkgInfo(package, None)
     distPackages = readDB(config.distPath + list(pkgBranch.keys())[0] + '/INDEX')
     if Version(distPackages[package]) > Version(pkgInfo['version']):
         return True
@@ -73,11 +80,14 @@ def getPkgBranch(package):
         if package in packages:
             return {branch: branches[branch]}
 
-def getPkgFile(package, download=True):
+def getPkgFile(package, chroot, download=True, ):
+    chrootPath = ''
+    if chroot != None:
+        chrootPath = chroot
     packageBranch = getPkgBranch(package)
-
     if download:
-        os.chdir(config.localPath + list(packageBranch.keys())[0])
+        os.makedirs(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0], exist_ok=True)
+        os.chdir(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0])
         req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
         if req.status_code != 200:
             return None
@@ -88,9 +98,9 @@ def getPkgFile(package, download=True):
 
     return config.localPath + list(packageBranch.keys())[0] + '/' + package
 
-def getPkgInfo(package):
+def getPkgInfo(package, chroot):
     packageBranch = getPkgBranch(package)
-    packageInfoPath = getPkgFile(package)
+    packageInfoPath = getPkgFile(package, chroot)
 
     pkg_file = open(packageInfoPath, 'r')
 
@@ -133,9 +143,13 @@ def readDB(path):
 
     return packages
 
-def registerPkg(package, version):
+def registerPkg(package, version, chroot):
     branchName = list(getPkgBranch(package).keys())[0]
-    localDB = open(config.localPath + '/' + branchName + '/INDEX', 'a')
+    localDB = None
+    if chroot != None:
+        localDB = open(chroot + '/INDEX', 'a')
+    else:
+        localDB = open(config.localPath + '/' + branchName + '/INDEX', 'a')
     localDB.write(package + " " + version + " " + date.today().strftime("%Y-%m-%d") + '\n')
     localDB.close()
 

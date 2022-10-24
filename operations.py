@@ -28,7 +28,7 @@ def downloadPkg(url, packageName):
                 sys.stdout.flush()
     print()
 
-def get(packages, noIndex):
+def get(packages, noIndex, acceptInstall, chroot):
     sync()
     # Check if packages names correspond to any branch name
     branchesToGet = []
@@ -58,38 +58,37 @@ def get(packages, noIndex):
         print('[+branch] ' + branch)
 
     print()
-    permission = input('Do you really want to install these packages ? (Y/N) ')
-    print()
-    permission = permission.lower()
+    if not acceptInstall:
+        permission = input('Do you really want to install these packages ? (Y/N) ')
+        print()
+        permission = permission.lower()
+    else:
+        permission = 'y'
 
     if permission != 'y':
         return 1
     
     logInfo("Getting packages infos...")
     for package in packagesToGet:
-        getPkg(package, len(packagesToGet), noIndex)
+        print('Getting "' + package + '"')
+        getPkg(package, len(packagesToGet), noIndex, chroot)
 
-def getPkg(package, pkgCount, noIndex, update=False):
+def getPkg(package, pkgCount, noIndex, chroot, update=False):
     sync()
-    if checkPkgInstalled(package) and not update:
+    if checkPkgInstalled(package, chroot) and not update:
         logInfo("package '" + package + "' is already installed.")
         return
-    packageInfoPath = getPkgFile(package)
+    packageInfoPath = getPkgFile(package, chroot)
 
     if packageInfoPath == None:
         logError("There are some errors in repos for the package '" + package + "' ! Call an admin.")
 
-    pkgInfo = getPkgInfo(package)
-    justInstalledPkgs = []
-    if 'rundeps' in pkgInfo and len(pkgInfo['rundeps']) > 0:
-        logInfo('Getting package dependencies...')
-        for d in pkgInfo['rundeps'].split():
-            if not checkPkgInstalled(d) and not d in justInstalledPkgs:
-                getPkg(d, getPkgInfo(d), noIndex)
-                justInstalledPkgs.append(d)
-            else:
-                logInfo("dependency '" + d + "' is already installed.")
+    pkgInfo = getPkgInfo(package, chroot)
     
+    if 'rundeps' in pkgInfo:
+        for d in pkgInfo['rundeps'].split():
+            getPkg(d, len(pkgInfo['rundeps']) + 1, False, chroot)
+            
     if pkgCount == 1:
         print('---------------')
         print("Package '" + pkgInfo['name'] + "':")
@@ -102,26 +101,30 @@ def getPkg(package, pkgCount, noIndex, update=False):
         if 'url' in pkgInfo:
             print("===> Homepage: " + pkgInfo['url'])
         print('---------------')
-        
-    installPkg(package, pkgInfo, noIndex)
+    
+    installPkg(package, pkgInfo, noIndex, chroot)
     print()
 
-def installPkg(package, pkgInfo, noIndex):
+def installPkg(package, pkgInfo, noIndex, chroot):
     sync()
     print()
-    tempDir = tempfile.TemporaryDirectory('squirrel-' + package)
+    tempDir = tempfile.TemporaryDirectory('squirrel-' + pkgInfo['name'])
     os.chdir(tempDir.name)
-    downloadPkg(getPkgBranch(package)[list(getPkgBranch(package).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz', package)
+    downloadPkg(getPkgBranch(pkgInfo['name'])[list(getPkgBranch(pkgInfo['name']).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz', pkgInfo['name'])
     if 'ROOT' not in os.environ:
         os.environ['ROOT'] = '/'
     os.chdir(os.environ['ROOT'])
     archive.extractPkgArchive(tempDir.name + '/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz')
-    if checkPkgInstalled(package) and not noIndex:
-        unregisterPkg(package)
-    if not noIndex:
-        registerPkg(package, pkgInfo['version'])
-    os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree')
-    logInfo("package '" + package + "' has been successfully installed.")
+    if checkPkgInstalled(pkgInfo['name'], chroot):
+        unregisterPkg(pkgInfo['name'])
+    
+    registerPkg(pkgInfo['name'], pkgInfo['version'], chroot)
+    if chroot == None:
+        os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
+    else:
+        os.popen('mv .TREE ' + chroot + '/' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
+
+    logInfo("package '" + pkgInfo['name'] + "' has been successfully installed.")
 
 def remove(packages, noIndex):
     branchesToRemove = []
@@ -193,8 +196,8 @@ def info(packages):
         if checkPkgInstalled(package):
             download = False
         
-        packageInfoPath = getPkgFile(package, download)
-        pkgInfo = getPkgInfo(package)
+        packageInfoPath = getPkgFile(package, None, download)
+        pkgInfo = getPkgInfo(package, None)
 
         print('-----PACKAGE ' + package + '-----')
         print("===> Name: " + pkgInfo['name'])
@@ -247,7 +250,7 @@ def upgrade():
         return 1
 
     for package in toUpdatePackages:
-        getPkg(package, len(toUpdatePackages), False, True)
+        getPkg(package, len(toUpdatePackages), False, None, True)
 
 def sync():
     for branch in getBranches():
