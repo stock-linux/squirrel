@@ -80,7 +80,7 @@ def getPkgBranch(package):
         if package in packages:
             return {branch: branches[branch]}
 
-def getPkgFile(package, chroot, download=True, ):
+def getPkgFile(package, chroot, download=True):
     chrootPath = ''
     if chroot != None:
         chrootPath = chroot
@@ -96,7 +96,8 @@ def getPkgFile(package, chroot, download=True, ):
         infoFile.close()
         req.close()
 
-    return config.localPath + list(packageBranch.keys())[0] + '/' + package
+    chrootPath += '/'
+    return chrootPath + config.localPath + list(packageBranch.keys())[0] + '/' + package
 
 def getPkgInfo(package, chroot):
     packageBranch = getPkgBranch(package)
