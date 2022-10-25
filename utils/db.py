@@ -49,7 +49,7 @@ def checkPkgInstalled(package, chroot):
 
 def checkVersionUpdate(package):
     pkgBranch = getPkgBranch(package)
-    pkgInfo = getPkgInfo(package, None, False)
+    pkgInfo = getPkgInfo(package, None, False, False)
     distPackages = readDB(config.distPath + list(pkgBranch.keys())[0] + '/INDEX')
     if Version(distPackages[package]) > Version(pkgInfo['version']):
         return True
