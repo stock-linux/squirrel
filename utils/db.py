@@ -16,9 +16,15 @@ def checkPkgExists(package):
 
     return False
 
+def createFile(path):
+    open(path, 'x').close()
+
 def checkPkgInstalled(package, chroot):
     if chroot != None:
         index = readDB(chroot + '/INDEX')
+        if index == None:
+            createFile(chroot + '/INDEX')
+            return False     
         if package in index:
             return True
         
@@ -31,7 +37,9 @@ def checkPkgInstalled(package, chroot):
         branchLocalDBPath = branchLocalPath + 'INDEX'
 
         installedPackages = readDB(branchLocalDBPath)
-
+        if installedPackages == None:
+            createFile(branchLocalDBPath)
+            return False
         if package in installedPackages:
             return True
 
@@ -134,8 +142,10 @@ def getPkgInfo(package, chroot):
 
 def readDB(path):
     packages = {}
-    
-    dbFile = open(path, 'r')
+    try:
+        dbFile = open(path, 'r')
+    except FileNotFoundError:
+        return None
     for line in dbFile.readlines():
         packageName = line.split()[0].strip()
         packageVersion = line.split()[1].strip()
