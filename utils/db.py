@@ -90,28 +90,40 @@ def getPkgBranch(package):
         if package in packages:
             return {branch: branches[branch]}
 
-def getPkgFile(package, chroot, download=True):
+def getPkgFile(package, chroot, download=True, distant=False):
     chrootPath = ''
     if chroot != None:
         chrootPath = chroot
     packageBranch = getPkgBranch(package)
     if download:
-        os.makedirs(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0], exist_ok=True)
-        os.chdir(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0])
-        req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
-        if req.status_code != 200:
-            return None
-        infoFile = open(package, 'wb')
-        infoFile.write(req.content)
-        infoFile.close()
-        req.close()
+        if not distant:
+            os.makedirs(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0], exist_ok=True)
+            os.chdir(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0])
+            req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
+            if req.status_code != 200:
+                return None
+            infoFile = open(package, 'wb')
+            infoFile.write(req.content)
+            infoFile.close()
+            req.close()
+            chrootPath += '/'
+            return chrootPath + config.localPath + list(packageBranch.keys())[0] + '/' + package
+        if distant:
+            os.makedirs(chrootPath + '/' + config.distPath + list(packageBranch.keys())[0], exist_ok=True)
+            os.chdir(chrootPath + '/' + config.distPath + list(packageBranch.keys())[0])
+            req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
+            if req.status_code != 200:
+                return None
+            infoFile = open(package, 'wb')
+            infoFile.write(req.content)
+            infoFile.close()
+            req.close()
+            chrootPath += '/'
+            return chrootPath + config.distPath + list(packageBranch.keys())[0] + '/' + package
 
-    chrootPath += '/'
-    return chrootPath + config.localPath + list(packageBranch.keys())[0] + '/' + package
-
-def getPkgInfo(package, chroot, download=True):
+def getPkgInfo(package, chroot, download=True, distant=False):
     packageBranch = getPkgBranch(package)
-    packageInfoPath = getPkgFile(package, chroot, download)
+    packageInfoPath = getPkgFile(package, chroot, download, distant)
 
     pkg_file = open(packageInfoPath, 'r')
 
@@ -140,6 +152,8 @@ def getPkgInfo(package, chroot, download=True):
 
         if ")" in line:
             opened_brackets -= 1
+    if distant:
+        os.remove(packageInfoPath)
     return info
 
 def readDB(path):

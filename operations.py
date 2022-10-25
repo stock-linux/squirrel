@@ -206,10 +206,10 @@ def info(packages):
         download = True
         if checkPkgInstalled(package, None):
             download = False
-        
+        legacyLocalPath = config.localPath
         packageInfoPath = getPkgFile(package, None, download)
-        pkgInfo = getPkgInfo(package, None)
-
+        pkgInfo = getPkgInfo(package, None, True, True)
+        config.localPath = legacyLocalPath
         print('-----PACKAGE ' + package + '-----')
         print("===> Name: " + pkgInfo['name'])
         if not checkPkgInstalled(package, None):
