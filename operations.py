@@ -212,7 +212,7 @@ def info(packages):
 
         print('-----PACKAGE ' + package + '-----')
         print("===> Name: " + pkgInfo['name'])
-        if not checkPkgInstalled(package):
+        if not checkPkgInstalled(package, None):
             print("===> Version: " + pkgInfo['version'])
         else:
             print("===> Version: [installed: " + readDB(config.localPath + list(getPkgBranch(package).keys())[0] + '/INDEX')[package] + "][distant: " + pkgInfo['version'] + "]")
@@ -224,7 +224,7 @@ def info(packages):
             print("===> Maintainer: " + pkgInfo['maintainer'])
         if 'url' in pkgInfo:
             print("===> Homepage: " + pkgInfo['url'])
-        print("===> Installed: " + str(checkPkgInstalled(package)))
+        print("===> Installed: " + str(checkPkgInstalled(package, None)))
         
         if download:
             os.remove(packageInfoPath)
