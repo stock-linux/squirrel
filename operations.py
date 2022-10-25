@@ -84,11 +84,10 @@ def getPkg(package, pkgCount, noIndex, chroot, update=False):
         logError("There are some errors in repos for the package '" + package + "' ! Call an admin.")
 
     pkgInfo = getPkgInfo(package, chroot)
-    
+            
     if 'rundeps' in pkgInfo:
         for d in pkgInfo['rundeps'].split():
             getPkg(d, len(pkgInfo['rundeps']) + 1, False, chroot)
-            
     if pkgCount == 1:
         print('---------------')
         print("Package '" + pkgInfo['name'] + "':")
@@ -103,6 +102,7 @@ def getPkg(package, pkgCount, noIndex, chroot, update=False):
         print('---------------')
     
     installPkg(package, pkgInfo, noIndex, chroot)
+    runPost(pkgInfo, chroot)
     print()
 
 def installPkg(package, pkgInfo, noIndex, chroot):
@@ -126,6 +126,17 @@ def installPkg(package, pkgInfo, noIndex, chroot):
 
     logInfo("package '" + pkgInfo['name'] + "' has been successfully installed.")
 
+def runPost(pkgInfo, chroot):
+    if 'post' in pkgInfo:
+        if chroot == None:
+            os.system(pkgInfo['post'])
+        else:
+            os.chroot(chroot)
+            os.chdir('/')
+            os.system(pkgInfo['post'])
+    else:
+        pass
+    
 def remove(packages, noIndex):
     branchesToRemove = []
     packagesToRemove = []
