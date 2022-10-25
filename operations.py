@@ -204,7 +204,7 @@ def info(packages):
     sync()
     for package in packages:
         download = True
-        if checkPkgInstalled(package):
+        if checkPkgInstalled(package, None):
             download = False
         
         packageInfoPath = getPkgFile(package, None, download)
