@@ -23,6 +23,7 @@ def checkPkgInstalled(package, chroot):
     if chroot != None:
         index = readDB(chroot + '/INDEX')
         if index == None:
+            os.makedirs(branchLocalPath, exist_ok=True)
             createFile(chroot + '/INDEX')
             return False     
         if package in index:
@@ -38,6 +39,7 @@ def checkPkgInstalled(package, chroot):
 
         installedPackages = readDB(branchLocalDBPath)
         if installedPackages == None:
+            os.makedirs(branchLocalPath, exist_ok=True)
             createFile(branchLocalDBPath)
             return False
         if package in installedPackages:
