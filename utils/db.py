@@ -49,7 +49,7 @@ def checkPkgInstalled(package, chroot):
 
 def checkVersionUpdate(package):
     pkgBranch = getPkgBranch(package)
-    pkgInfo = getPkgInfo(package, None)
+    pkgInfo = getPkgInfo(package, None, False)
     distPackages = readDB(config.distPath + list(pkgBranch.keys())[0] + '/INDEX')
     if Version(distPackages[package]) > Version(pkgInfo['version']):
         return True
@@ -109,9 +109,9 @@ def getPkgFile(package, chroot, download=True):
     chrootPath += '/'
     return chrootPath + config.localPath + list(packageBranch.keys())[0] + '/' + package
 
-def getPkgInfo(package, chroot):
+def getPkgInfo(package, chroot, download=True):
     packageBranch = getPkgBranch(package)
-    packageInfoPath = getPkgFile(package, chroot)
+    packageInfoPath = getPkgFile(package, chroot, download)
 
     pkg_file = open(packageInfoPath, 'r')
 
