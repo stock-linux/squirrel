@@ -120,6 +120,7 @@ def getPkgFile(package, chroot, download=True, distant=False):
             req.close()
             chrootPath += '/'
             return chrootPath + config.distPath + list(packageBranch.keys())[0] + '/' + package
+    return chrootPath + config.localPath + list(packageBranch.keys())[0] + '/' + package
 
 def getPkgInfo(package, chroot, download=True, distant=False):
     packageBranch = getPkgBranch(package)
