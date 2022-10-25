@@ -146,10 +146,10 @@ def remove(packages, noIndex):
             if package == branch:
                 branchesToRemove.append(branch)
                 for package in getBranchPkgs(branch):
-                    if checkPkgInstalled(package):
+                    if checkPkgInstalled(package, None):
                         packagesToRemove.append(package)
             else:
-                if not noIndex and not checkPkgInstalled(package):
+                if not noIndex and not checkPkgInstalled(package, None):
                     print("error: package '" + package + "' is not installed.")
                     exit(1)
                 packagesToRemove.append(package)
