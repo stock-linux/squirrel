@@ -42,7 +42,8 @@ def get(packages, noIndex, acceptInstall, chroot):
                 for branchPkg in branchPkgs:
                     packagesToGet.append(branchPkg)
             else:
-                packagesToGet.append(package)
+                if not package in packagesToGet:
+                    packagesToGet.append(package)
 
     for package in packagesToGet:
         packageExists = checkPkgExists(package)
