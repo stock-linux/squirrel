@@ -19,7 +19,7 @@ from docopt import docopt
 import operations
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version="squirrel 1.0.2-dev")
+    args = docopt(__doc__, version="squirrel 1.0.2")
     if args.get('get'):
         operations.get(args.get('<package>'), args.get('--no-index'), args.get('-y'), args.get('--chroot'))
     elif args.get('info'):
