@@ -41,9 +41,9 @@ def get(packages, noIndex, acceptInstall, chroot):
                 branchPkgs = getBranchPkgs(branch)
                 for branchPkg in branchPkgs:
                     packagesToGet.append(branchPkg)
-            else:
-                if not package in packagesToGet and not package in branchesToGet:
-                    packagesToGet.append(package)
+    for package in packages:
+        if not package in packagesToGet and not package in branchesToGet:
+            packagesToGet.append(package)
 
     for package in packagesToGet:
         packageExists = checkPkgExists(package)
