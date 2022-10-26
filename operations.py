@@ -153,7 +153,8 @@ def remove(packages, noIndex):
                 if not noIndex and not checkPkgInstalled(package, None):
                     print("error: package '" + package + "' is not installed.")
                     exit(1)
-                packagesToRemove.append(package)
+                if not package in packagesToRemove:
+                    packagesToRemove.append(package)
 
     
     print('-----PACKAGE DELETION-----')
