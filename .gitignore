@@ -1,5 +1,6 @@
 .vscode
 extern
 dev
+squirrel
 __pycache__
 utils/__pycache__
