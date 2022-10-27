@@ -88,7 +88,7 @@ def getPkg(package, pkgCount, noIndex, chroot, update=False):
             
     if 'rundeps' in pkgInfo:
         for d in pkgInfo['rundeps'].split():
-            getPkg(d, len(pkgInfo['rundeps']) + 1, False, chroot)
+            getPkg(d, len(pkgInfo['rundeps']) + 1, False, None)
     if pkgCount == 1:
         print('---------------')
         print("Package '" + pkgInfo['name'] + "':")
