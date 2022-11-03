@@ -2,7 +2,7 @@ import os
 from utils.db import checkPkgExists, checkPkgInstalled, checkVersionUpdate, getBranchPkgs, getBranches, getPkgBranch, getPkgFile, getPkgInfo, readDB, registerPkg, unregisterPkg
 from utils.logger import *
 
-import requests
+import requests, urllib, urllib.request
 import sys
 import tempfile
 import utils.archive as archive
@@ -49,7 +49,7 @@ def get(packages, noIndex, acceptInstall, chroot):
         packageExists = checkPkgExists(package)
         if not packageExists:
             logError("package '" + package + "' does not exist in repos !")
-            return 1
+            exit(1)
 
     print('-----PACKAGE INSTALLATION-----')
     for package in packagesToGet:
@@ -67,7 +67,7 @@ def get(packages, noIndex, acceptInstall, chroot):
         permission = 'y'
 
     if permission != 'y':
-        return 1
+        exit(1)
     
     logInfo("Getting packages infos...")
     for package in packagesToGet:
@@ -88,7 +88,7 @@ def getPkg(package, pkgCount, noIndex, chroot, update=False):
             
     if 'rundeps' in pkgInfo:
         for d in pkgInfo['rundeps'].split():
-            getPkg(d, len(pkgInfo['rundeps']) + 1, False, None)
+            getPkg(d, len(pkgInfo['rundeps']) + 1, False, chroot)
     if pkgCount == 1:
         print('---------------')
         print("Package '" + pkgInfo['name'] + "':")
@@ -269,7 +269,8 @@ def sync():
     for branch in getBranches():
         os.makedirs(config.distPath + branch, exist_ok=True)
         os.chdir(config.distPath + branch)
-        request = requests.get(getBranches()[branch] + '/INDEX')
+        request = urllib.request.urlopen(getBranches()[branch] + '/INDEX')
         writer = open('INDEX', 'wb')
-        writer.write(request.content)
+        writer.write(request.read())
         writer.close()
+        request.close()

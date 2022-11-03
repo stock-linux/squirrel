@@ -1,6 +1,6 @@
 from datetime import date
 from packaging.version import Version, LegacyVersion
-import os, requests, yaml
+import os, requests, urllib, urllib.request, yaml
 import utils.config as config
 
 def checkPkgExists(package):
@@ -99,11 +99,9 @@ def getPkgFile(package, chroot, download=True, distant=False):
         if not distant:
             os.makedirs(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0], exist_ok=True)
             os.chdir(chrootPath + '/' + config.localPath + list(packageBranch.keys())[0])
-            req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
-            if req.status_code != 200:
-                return None
+            req = urllib.request.urlopen(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
             infoFile = open(package, 'wb')
-            infoFile.write(req.content)
+            infoFile.write(req.read())
             infoFile.close()
             req.close()
             chrootPath += '/'
@@ -111,11 +109,9 @@ def getPkgFile(package, chroot, download=True, distant=False):
         if distant:
             os.makedirs(chrootPath + '/' + config.distPath + list(packageBranch.keys())[0], exist_ok=True)
             os.chdir(chrootPath + '/' + config.distPath + list(packageBranch.keys())[0])
-            req = requests.get(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
-            if req.status_code != 200:
-                return None
+            req = urllib.request.urlopen(packageBranch[list(packageBranch.keys())[0]] + '/' + package)
             infoFile = open(package, 'wb')
-            infoFile.write(req.content)
+            infoFile.write(req.read())
             infoFile.close()
             req.close()
             chrootPath += '/'
