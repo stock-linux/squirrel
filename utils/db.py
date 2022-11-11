@@ -131,24 +131,24 @@ def getPkgInfo(package, chroot, download=True, distant=False):
     for line in pkg_file.readlines():
         if line.startswith("#") or line == "" or line == "\n":
             continue
+
+        if ")" == line.strip():
+            record_build = False
+            continue
+
         if "(" not in line or line.split(': ')[0] == "description":
             if not record_build:
                 info[line.split(": ")[0].strip()] = line.split(": ")[1].strip()
             else:
-                if line.replace('\n','').strip() != ")" or (")" in line and opened_brackets > 1):
-                    info[bracket_name] += line
+                info[bracket_name] += line
         else:
-            record_build = True
-            opened_brackets += 1
-            if opened_brackets > 1:
+            if record_build:
                 info[bracket_name] += line
             else:
                 bracket_name = line.split("(")[0].strip()
+            record_build = True
             if not bracket_name in info:
-                info[bracket_name] = ""  
-
-        if ")" in line:
-            opened_brackets -= 1
+                info[bracket_name] = ""
     if distant:
         os.remove(packageInfoPath)
     return info
