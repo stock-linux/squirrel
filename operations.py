@@ -208,7 +208,6 @@ def remove(packages, noIndex):
             print('Files not found during deletion: ' + str(fileNotFoundCount))
 
 def info(packages):
-    sync()
     for package in packages:
         download = True
         if checkPkgInstalled(package, None):
