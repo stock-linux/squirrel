@@ -132,9 +132,14 @@ def runPost(pkgInfo, chroot):
         if chroot == None:
             os.system(pkgInfo['post'])
         else:
+            real_root = os.open("/", os.O_PATH)
             os.chroot(chroot)
             os.chdir('/')
             os.system(pkgInfo['post'])
+            os.chdir(real_root)
+            os.chroot(".")
+            # Back to old root
+            os.close(real_root)
     else:
         pass
     
