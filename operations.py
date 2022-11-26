@@ -1,7 +1,6 @@
-import os
+import os, shutil
 from utils.db import checkPkgExists, checkPkgInstalled, checkVersionUpdate, getBranchPkgs, getBranches, getPkgBranch, getPkgFile, getPkgInfo, readDB, registerPkg, unregisterPkg
 from utils.logger import *
-
 import requests, urllib, urllib.request
 import sys
 import tempfile
@@ -111,15 +110,23 @@ def installPkg(package, pkgInfo, noIndex, chroot):
     print()
     tempDir = tempfile.TemporaryDirectory('squirrel-' + pkgInfo['name'])
     os.chdir(tempDir.name)
-    downloadPkg(getPkgBranch(pkgInfo['name'])[list(getPkgBranch(pkgInfo['name']).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz', pkgInfo['name'])
+    if getPkgBranch(pkgInfo['name'])[list(getPkgBranch(pkgInfo['name']).keys())[0]].startswith('file:///'):
+        shutil.copy((getPkgBranch(pkgInfo['name'])[list(getPkgBranch(pkgInfo['name']).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz').replace('file://',''), '.')
+    else:    
+        downloadPkg(getPkgBranch(pkgInfo['name'])[list(getPkgBranch(pkgInfo['name']).keys())[0]] + '/bins/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz', pkgInfo['name'])
+    
     if 'ROOT' not in os.environ:
         os.environ['ROOT'] = '/'
+    
     os.chdir(os.environ['ROOT'])
+    
     archive.extractPkgArchive(tempDir.name + '/' + pkgInfo['name'] + '-' + pkgInfo['version'] + '.tar.xz')
+    
     if checkPkgInstalled(pkgInfo['name'], chroot):
         unregisterPkg(pkgInfo['name'])
     
     registerPkg(pkgInfo['name'], pkgInfo['version'], chroot)
+    
     if chroot == None:
         os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
     else:
