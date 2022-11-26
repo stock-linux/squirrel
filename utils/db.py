@@ -59,6 +59,8 @@ def getBranches():
 
     configFile = open(config.configPath + 'branches', 'r')
     for line in configFile.readlines():
+        if line.startswith('#'):
+            continue
         branchName = line.split()[0].strip()
         branchURL = line.split()[1].strip()
 

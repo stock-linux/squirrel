@@ -128,9 +128,9 @@ def installPkg(package, pkgInfo, noIndex, chroot):
     registerPkg(pkgInfo['name'], pkgInfo['version'], chroot)
     
     if chroot == None:
-        os.popen('mv .TREE ' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
+        shutil.move('.TREE', config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
     else:
-        os.popen('mv .TREE ' + chroot + '/' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
+        shutil.move('.TREE', chroot + '/' + config.localPath + list(getPkgBranch(pkgInfo['name']).keys())[0] + '/' + pkgInfo['name'] + '.tree')
 
     logInfo("package '" + pkgInfo['name'] + "' has been successfully installed.")
 
@@ -274,8 +274,39 @@ def upgrade():
         return 1
 
     for package in toUpdatePackages:
-        getPkg(package, len(toUpdatePackages), False, None, True)
+        oldTree = open(config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.old.tree', 'r').readlines()
+        shutil.move(config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree', config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.old.tree')
 
+        getPkg(package, len(toUpdatePackages), False, None, True)
+        print(os.listdir(config.localPath + list(getPkgBranch(package).keys())[0]))
+        newTree = open(config.localPath + list(getPkgBranch(package).keys())[0] + '/' + package + '.tree', 'r').readlines()
+
+        pathsToRemove = []
+        for line in oldTree:
+            if not line in newTree:
+                pathsToRemove.append(line)
+            else:
+                print('WARNING ! Do not remove this file: ' + line.replace('./','/'))
+
+        dirsToCheck = []
+        
+        for path in pathsToRemove:
+            if path.strip() == '.' or path.strip() == './.TREE':
+                continue
+            if os.path.isdir(path.strip()) and not os.path.islink(path.strip()):
+                dirsToCheck.append(path.strip())
+            else:
+                try:
+                    os.remove(path.strip())
+                except FileNotFoundError:
+                    logError("file '" + path.strip().replace('./', os.environ['ROOT'] + '/') + "' not found ! Anyway, continue.")
+                    fileNotFoundCount+=1
+
+        for dir in dirsToCheck:
+            if len(os.listdir(dir)) == 0:
+                os.removedirs(dir)
+
+        
 def sync():
     for branch in getBranches():
         os.makedirs(config.distPath + branch, exist_ok=True)
